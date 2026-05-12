@@ -30,7 +30,7 @@ Before you begin, ensure you have the following installed:
 
 1. **Clone the repository or navigate to the project folder:**
    ```bash
-   cd "face attendance sys"
+   cd "PresencePro—Attendance-Operations-Platform"
    ```
 
 2. **Create a virtual environment (recommended):**
