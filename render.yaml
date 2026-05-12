@@ -3,6 +3,7 @@ services:
     name: presencepro
     env: python
     plan: free
+    pythonVersion: 3.11.9
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn "app:create_app()" --bind 0.0.0.0:$PORT
     envVars:
