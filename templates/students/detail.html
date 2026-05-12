@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Student Detail{% endblock %}
+{% block page_title %}Student Profile{% endblock %}
+
+{% block content %}
+<div id="student-content">
+  <div class="text-center" style="padding:60px">
+    <div class="spinner" style="margin:0 auto 16px"></div>
+    <p class="text-muted">Loading profile…</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>const STUDENT_ID = "{{ student_id }}";</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="/static/js/students.js"></script>
+{% endblock %}

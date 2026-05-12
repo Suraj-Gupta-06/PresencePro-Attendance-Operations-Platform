@@ -1,0 +1,32 @@
+# Core Flask
+Flask==3.0.3
+Flask-SQLAlchemy==3.1.1
+Flask-JWT-Extended==4.6.0
+Flask-CORS==4.0.0
+Flask-Bcrypt==1.0.1
+
+# Database
+SQLAlchemy==2.0.30
+
+# ML & Computer Vision
+opencv-python==4.9.0.80
+numpy==1.26.4
+Pillow==10.3.0
+scikit-learn==1.4.2
+face-recognition==1.3.0
+
+# Utilities
+python-dotenv==1.0.1
+python-dateutil==2.9.0
+
+# Data & Reports
+pandas==2.2.2
+openpyxl==3.1.2
+reportlab==4.2.2
+
+# Web server (production)
+gunicorn==22.0.0
+
+# Testing
+pytest==8.2.0
+pytest-flask==1.3.0

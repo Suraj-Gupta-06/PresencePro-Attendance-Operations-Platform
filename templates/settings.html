@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block page_title %}Settings{% endblock %}
+{% block page_subtitle %}Configure recognition thresholds, camera, and policies{% endblock %}
+
+{% block content %}
+<div style="max-width:760px">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('recognition', this)">
+      <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 7V5a1 1 0 0 1 1-1h2" />
+        <path d="M20 7V5a1 1 0 0 0-1-1h-2" />
+        <path d="M4 17v2a1 1 0 0 0 1 1h2" />
+        <path d="M20 17v2a1 1 0 0 1-1 1h-2" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+      Recognition
+    </button>
+    <button class="tab-btn" onclick="switchTab('camera', this)">
+      <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 7h3l2-2h6l2 2h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z" />
+        <circle cx="12" cy="13" r="3" />
+      </svg>
+      Camera
+    </button>
+    <button class="tab-btn" onclick="switchTab('attendance', this)">
+      <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 6h16" />
+        <path d="M4 12h16" />
+        <path d="M4 18h10" />
+      </svg>
+      Attendance
+    </button>
+    <button class="tab-btn" onclick="switchTab('system', this)">
+      <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="3" />
+        <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.6V22a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.6-1H2a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.6V2a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6h.1a1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.6 1H22a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.6 1z" />
+      </svg>
+      System
+    </button>
+  </div>
+
+  <div id="tab-recognition" class="tab-content active card">
+    <h3 class="mb-4">Recognition Settings</h3>
+    <div class="form-group">
+      <label class="form-label">Recognition Threshold: <strong><span id="threshold-val">0.5</span></strong></label>
+      <input type="range" min="0.3" max="0.8" step="0.01" id="recognition_threshold" oninput="document.getElementById('threshold-val').textContent=this.value">
+      <p class="text-xs text-muted mt-1">Lower = stricter matching (fewer false positives). Recommended: 0.45–0.55</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Detection Model</label>
+      <select class="form-control" id="detection_model">
+        <option value="hog">HOG (Fast, CPU-friendly)</option>
+        <option value="cnn">CNN (Slower, more accurate)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Frame Skip (process every N frames)</label>
+      <input type="number" class="form-control" id="frame_skip" min="1" max="10" value="2">
+    </div>
+    <button class="btn btn-primary" onclick="saveSettings('recognition')">
+      <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 3h11l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" />
+        <path d="M17 21v-8H7v8" />
+        <path d="M7 3v5h8" />
+      </svg>
+      Save Recognition Settings
+    </button>
+  </div>
+
+  <div id="tab-camera" class="tab-content card">
+    <h3 class="mb-4">Camera Settings</h3>
+    <div class="form-group">
+      <label class="form-label">Default Camera Resolution</label>
+      <select class="form-control" id="camera_resolution">
+        <option value="640x480">640×480 (SD)</option>
+        <option value="1280x720" selected>1280×720 (HD)</option>
+        <option value="1920x1080">1920×1080 (Full HD)</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="saveSettings('camera')">
+      <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 3h11l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" />
+        <path d="M17 21v-8H7v8" />
+        <path d="M7 3v5h8" />
+      </svg>
+      Save Camera Settings
+    </button>
+  </div>
+
+  <div id="tab-attendance" class="tab-content card">
+    <h3 class="mb-4">Attendance Policy</h3>
+    <div class="form-group">
+      <label class="form-label">Cooldown Period (minutes)</label>
+      <input type="number" class="form-control" id="cooldown_period" min="0" max="480" value="120">
+      <p class="text-xs text-muted mt-1">Minimum time between two attendance marks for same student. 0 = no cooldown.</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Late Arrival Grace Period (minutes)</label>
+      <input type="number" class="form-control" id="grace_period" min="0" max="60" value="10">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Morning Session Start</label>
+      <input type="time" class="form-control" id="session_morning_start" value="08:00">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Afternoon Session Start</label>
+      <input type="time" class="form-control" id="session_afternoon_start" value="12:00">
+    </div>
+    <button class="btn btn-primary" onclick="saveSettings('attendance')">
+      <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 3h11l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" />
+        <path d="M17 21v-8H7v8" />
+        <path d="M7 3v5h8" />
+      </svg>
+      Save Attendance Settings
+    </button>
+  </div>
+
+  <div id="tab-system" class="tab-content card">
+    <h3 class="mb-4">System</h3>
+    <div class="form-group">
+      <label class="form-label">Minimum Face Images for Registration</label>
+      <input type="number" class="form-control" id="min_face_images" min="1" max="20" value="5">
+    </div>
+    <div id="system-info" class="card mt-4" style="background:rgba(255,255,255,0.02)">
+      <div class="flex justify-between items-center mb-2">
+        <span class="text-sm text-muted">Server Time</span>
+        <span class="text-sm" id="sys-time">—</span>
+      </div>
+      <div class="flex justify-between items-center">
+        <span class="text-sm text-muted">Version</span>
+        <span class="text-sm badge badge-blue">v1.0.0</span>
+      </div>
+    </div>
+    <button class="btn btn-primary mt-4" onclick="saveSettings('system')">
+      <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 3h11l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" />
+        <path d="M17 21v-8H7v8" />
+        <path d="M7 3v5h8" />
+      </svg>
+      Save System Settings
+    </button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+async function loadConfig() {
+  try {
+    const res = await API.get('/api/v1/config/');
+    if (res.success) {
+      const c = res.data;
+      if (c.recognition_threshold !== undefined) {
+        document.getElementById('recognition_threshold').value = c.recognition_threshold;
+        document.getElementById('threshold-val').textContent = c.recognition_threshold;
+      }
+      if (c.detection_model) document.getElementById('detection_model').value = c.detection_model;
+      if (c.frame_skip)      document.getElementById('frame_skip').value = c.frame_skip;
+      if (c.cooldown_period) document.getElementById('cooldown_period').value = c.cooldown_period;
+      if (c.grace_period)    document.getElementById('grace_period').value = c.grace_period;
+      if (c.min_face_images) document.getElementById('min_face_images').value = c.min_face_images;
+      if (c.camera_resolution) document.getElementById('camera_resolution').value = c.camera_resolution;
+      if (c.session_morning_start) document.getElementById('session_morning_start').value = c.session_morning_start;
+      if (c.session_afternoon_start) document.getElementById('session_afternoon_start').value = c.session_afternoon_start;
+    }
+  } catch(e) {}
+  document.getElementById('sys-time').textContent = new Date().toLocaleString('en-IN');
+}
+
+async function saveSettings(group) {
+  const keys = {
+    recognition: ['recognition_threshold','detection_model','frame_skip'],
+    camera: ['camera_resolution'],
+    attendance: ['cooldown_period','grace_period','session_morning_start','session_afternoon_start'],
+    system: ['min_face_images'],
+  };
+  const data = {};
+  (keys[group] || []).forEach(k => {
+    const el = document.getElementById(k);
+    if (el) data[k] = el.value;
+  });
+  try {
+    const res = await API.put('/api/v1/config/', data);
+    if (res.success) showToast('Settings saved!', 'success');
+    else showToast(res.message || 'Save failed.', 'error');
+  } catch(e) { showToast('Error saving settings.', 'error'); }
+}
+
+loadConfig();
+</script>
+{% endblock %}

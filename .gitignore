@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Environment files
+.env
+.env.*
+
+# Logs
+logs/
+*.log
+
+# Database / data artifacts
+data/database/
+*.sqlite
+*.sqlite3
+*.db
+
+# Captured media and face data
+/data/attendance_captures/
+/data/faces/
+
+# Instance and runtime
+instance/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Build artifacts
+build/
+dist/

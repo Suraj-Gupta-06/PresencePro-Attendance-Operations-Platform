@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Mark Attendance{% endblock %}
+{% block page_title %}Mark Attendance{% endblock %}
+{% block page_subtitle %}Live face recognition attendance capture{% endblock %}
+
+{% block topbar_actions %}
+<button class="btn btn-success btn-sm" id="start-btn" onclick="startCamera()">
+  <svg class="icon-svg fill" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5v14l12-7z" /></svg>
+  Start Camera
+</button>
+<button class="btn btn-danger btn-sm" id="stop-btn" onclick="stopCamera()" style="display:none">
+  <svg class="icon-svg fill" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
+  Stop
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="grid-2" style="align-items:start">
+  <!-- Camera panel -->
+  <div>
+    <div class="card" style="padding:16px;margin-bottom:16px">
+      <div class="camera-container" id="camera-container">
+        <video id="camera-feed" autoplay muted playsinline></video>
+        <canvas id="canvas-overlay"></canvas>
+        <div class="camera-placeholder" id="camera-placeholder">
+          <div class="icon" aria-hidden="true">
+            <svg class="icon-svg" viewBox="0 0 24 24">
+              <path d="M4 7h3l2-2h6l2 2h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z" />
+              <circle cx="12" cy="13" r="3" />
+            </svg>
+          </div>
+          <p>Start the camera to begin capture</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Manual attendance -->
+    <div class="card">
+      <h3 class="mb-4">Manual Entry</h3>
+      <div class="form-group">
+        <label class="form-label">Student ID / Name</label>
+        <input type="text" class="form-control" id="manual-student-search" placeholder="Search student…" oninput="searchStudents(this.value)">
+        <div id="student-suggestions" style="position:relative"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Session</label>
+          <select class="form-control" id="manual-session">
+            <option>Morning</option><option>Afternoon</option><option>Evening</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-control" id="manual-status">
+            <option>Present</option><option>Late</option><option>Absent</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes (optional)</label>
+        <input type="text" class="form-control" id="manual-notes" placeholder="Reason…">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="submitManual()">
+        <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7" /></svg>
+        Mark Attendance
+      </button>
+    </div>
+  </div>
+
+  <!-- Live log panel -->
+  <div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="flex justify-between items-center mb-4">
+        <h3>Today's Log</h3>
+        <span class="badge badge-green" id="today-count">0 Present</span>
+      </div>
+      <div id="att-list" class="att-list">
+        <div class="empty-state">
+          <h3>No records for today</h3>
+          <p>New entries will appear here automatically</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recognition status -->
+    <div class="card" id="recognition-status-card">
+      <h4 class="mb-2">Recognition Status</h4>
+      <div id="recognition-result">
+        <p class="text-muted text-sm">Camera idle</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/camera.js"></script>
+<script src="/static/js/attendance.js"></script>
+{% endblock %}

@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Operational summary for today{% endblock %}
+
+{% block content %}
+<!-- Hero strip -->
+<div class="dashboard-gradient">
+  <div>
+    <div class="flex items-center gap-2 mb-2">
+      <span class="live-dot"></span>
+      <span class="text-sm font-semibold text-green">System Active</span>
+    </div>
+    <h2 id="hero-date" style="font-size:1.3rem;margin-bottom:4px;"></h2>
+    <p id="hero-greeting" class="text-secondary"></p>
+  </div>
+  <div class="flex gap-3">
+    <a href="/attendance/mark" class="btn btn-primary">
+      <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 7h3l2-2h6l2 2h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z" />
+        <circle cx="12" cy="13" r="3" />
+      </svg>
+      Mark Attendance
+    </a>
+    <a href="/students/register" class="btn btn-secondary">
+      <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 5v14" />
+        <path d="M5 12h14" />
+      </svg>
+      New Student
+    </a>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(79,142,247,0.15)">
+      <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="9" cy="7" r="3" />
+        <path d="M2 20a7 7 0 0 1 14 0" />
+        <circle cx="17" cy="9" r="2" />
+        <path d="M15 20a5 5 0 0 1 7 0" />
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value" id="stat-total">—</div>
+      <div class="stat-label">Total Students</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(16,217,122,0.15)">
+      <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 13l4 4L19 7" />
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value text-green" id="stat-present">—</div>
+      <div class="stat-label">Present Today</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(239,68,68,0.15)">
+      <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M6 6l12 12" />
+        <path d="M18 6l-12 12" />
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value text-red" id="stat-absent">—</div>
+      <div class="stat-label">Absent Today</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(251,191,36,0.15)">
+      <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 20V10" />
+        <path d="M10 20V4" />
+        <path d="M16 20v-7" />
+        <path d="M22 20H2" />
+      </svg>
+    </div>
+    <div>
+      <div class="stat-value text-yellow" id="stat-pct">—%</div>
+      <div class="stat-label">Attendance Rate</div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts + Recent -->
+<div class="grid-2" style="margin-bottom:24px">
+  <div class="card">
+    <div class="flex justify-between items-center mb-4">
+      <h3>Attendance Trend</h3>
+      <span class="badge badge-blue">Last 30 days</span>
+    </div>
+    <div class="chart-container">
+      <canvas id="trend-chart"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="flex justify-between items-center mb-4">
+      <h3>By Department</h3>
+      <span class="badge badge-purple">Today</span>
+    </div>
+    <div class="chart-container">
+      <canvas id="dept-chart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Attendance -->
+<div class="table-wrapper">
+  <div class="table-header">
+    <h3>Recent Attendance</h3>
+    <a href="/attendance/history" class="btn btn-secondary btn-sm">View All</a>
+  </div>
+  <table id="recent-table">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Time</th>
+        <th>Session</th>
+        <th>Confidence</th>
+        <th>Method</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="recent-tbody">
+      <tr><td colspan="6" class="text-center text-muted" style="padding:32px">
+        <div class="spinner" style="margin:0 auto 12px"></div>Loading records…
+      </td></tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="/static/js/dashboard.js"></script>
+{% endblock %}

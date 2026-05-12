@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block title %}Register Student{% endblock %}
+{% block page_title %}Register Student{% endblock %}
+{% block page_subtitle %}Step-by-step student registration with face capture{% endblock %}
+
+{% block content %}
+<!-- Wizard steps -->
+<div style="max-width:800px;margin:0 auto">
+  <div class="wizard-steps mb-6">
+    <div class="wizard-step">
+      <div class="flex-col items-center" style="align-items:center">
+        <div class="step-num active" id="step1-num">1</div>
+        <div class="step-label">Student Info</div>
+      </div>
+      <div class="step-line" id="line1"></div>
+    </div>
+    <div class="wizard-step">
+      <div class="flex-col items-center" style="align-items:center">
+        <div class="step-num" id="step2-num">2</div>
+        <div class="step-label">Capture Faces</div>
+      </div>
+      <div class="step-line" id="line2"></div>
+    </div>
+    <div class="wizard-step" style="flex:0">
+      <div class="flex-col items-center" style="align-items:center">
+        <div class="step-num" id="step3-num">3</div>
+        <div class="step-label">Confirm</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 1: Info -->
+  <div id="step-1">
+    <div class="card">
+      <h3 class="mb-4">Student Information</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Student ID *</label>
+          <input type="text" class="form-control" id="student_id" placeholder="e.g. CS2026001" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Full Name *</label>
+          <input type="text" class="form-control" id="name" placeholder="John Doe" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Email *</label>
+          <input type="email" class="form-control" id="email" placeholder="john@example.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone</label>
+          <input type="text" class="form-control" id="phone" placeholder="+91 9876543210">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Department</label>
+          <input type="text" class="form-control" id="department" placeholder="Computer Science">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Class</label>
+          <select class="form-control" id="class_id">
+            <option value="">— Select Class —</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row-3">
+        <div class="form-group">
+          <label class="form-label">Roll Number</label>
+          <input type="text" class="form-control" id="roll_no" placeholder="001">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date of Birth</label>
+          <input type="date" class="form-control" id="dob">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Gender</label>
+          <select class="form-control" id="gender">
+            <option value="">— Select —</option>
+            <option>Male</option><option>Female</option><option>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex justify-between mt-4">
+        <span></span>
+        <button class="btn btn-primary" onclick="goToStep2()">Next: Capture Faces</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Face Capture -->
+  <div id="step-2" style="display:none">
+    <div class="card">
+      <h3 class="mb-2">Capture Face Images</h3>
+      <p class="text-secondary text-sm mb-4">Capture at least <strong>5 clear photos</strong> from different angles for better accuracy.</p>
+
+      <div class="camera-container mb-4" id="reg-camera-container">
+        <video id="reg-video" autoplay muted playsinline style="width:100%;height:100%;object-fit:cover;display:none"></video>
+        <canvas id="reg-canvas" style="display:none"></canvas>
+        <div class="camera-placeholder" id="reg-placeholder">
+          <div class="icon" aria-hidden="true">
+            <svg class="icon-svg" viewBox="0 0 24 24">
+              <path d="M4 7h3l2-2h6l2 2h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z" />
+              <circle cx="12" cy="13" r="3" />
+            </svg>
+          </div>
+          <p>Camera not started</p>
+        </div>
+      </div>
+
+      <div class="flex gap-3 mb-4">
+        <button class="btn btn-secondary" id="cam-start-btn" onclick="startRegCamera()">
+          <svg class="icon-svg fill" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5v14l12-7z" /></svg>
+          Start Camera
+        </button>
+        <button class="btn btn-primary" id="capture-btn" onclick="captureFrame()" disabled>
+          <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 7h3l2-2h6l2 2h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z" />
+            <circle cx="12" cy="13" r="3" />
+          </svg>
+          Capture
+        </button>
+        <label class="btn btn-secondary" style="cursor:pointer">
+          <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3v12" />
+            <path d="M8 7l4-4 4 4" />
+            <path d="M4 21h16" />
+          </svg>
+          Upload Images
+          <input type="file" id="upload-input" multiple accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handleUpload(event)">
+        </label>
+      </div>
+
+      <div>
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-sm font-semibold">Captured: <span id="capture-count">0</span> / 10</span>
+          <button class="btn btn-danger btn-sm" onclick="clearCaptures()">Clear All</button>
+        </div>
+        <div class="capture-grid" id="capture-grid"></div>
+      </div>
+
+      <div id="capture-alert" class="alert alert-info mt-4" style="display:none">
+        <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 8v5" /><path d="M12 16h.01" /></svg>
+        <span id="capture-alert-msg"></span>
+      </div>
+
+      <div class="flex justify-between mt-6">
+        <button class="btn btn-secondary" onclick="goToStep1()">Back</button>
+        <button class="btn btn-primary" id="step2-next" onclick="goToStep3()" disabled>Next: Review</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: Confirm -->
+  <div id="step-3" style="display:none">
+    <div class="card">
+      <h3 class="mb-4">Confirm Registration</h3>
+      <div class="card" style="background:rgba(79,142,247,0.05);border-color:rgba(79,142,247,0.2);margin-bottom:20px">
+        <div id="confirm-details"></div>
+      </div>
+      <div id="reg-alert"></div>
+      <div class="flex justify-between">
+        <button class="btn btn-secondary" onclick="goToStep2()">Back</button>
+        <button class="btn btn-success btn-lg" id="submit-btn" onclick="submitRegistration()">
+          <span id="submit-text">
+            <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7" /></svg>
+            Register Student
+          </span>
+          <span id="submit-spinner" class="spinner" style="display:none"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/students.js"></script>
+{% endblock %}
