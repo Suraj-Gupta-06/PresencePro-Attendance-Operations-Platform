@@ -13,7 +13,7 @@ config_bp = Blueprint("config", __name__)
 @admin_required
 def get_config():
     all_config = SystemConfig.query.all()
-    return jsonify(*success_response({c.key: c.get_typed_value() for c in all_config}))
+    return success_response({c.key: c.get_typed_value() for c in all_config})
 
 
 @config_bp.put("/")
@@ -29,4 +29,4 @@ def update_config():
             SystemConfig.set(key, value)
     from app import db
     db.session.commit()
-    return jsonify(*success_response(message="Configuration updated."))
+    return success_response(message="Configuration updated.")
