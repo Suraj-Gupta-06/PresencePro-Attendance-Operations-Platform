@@ -38,6 +38,13 @@
       </svg>
       System
     </button>
+    <button class="tab-btn" onclick="switchTab('account', this)">
+      <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 20a8 8 0 0 1 16 0" />
+      </svg>
+      Account
+    </button>
   </div>
 
   <div id="tab-recognition" class="tab-content active card">
@@ -142,6 +149,35 @@
       Save System Settings
     </button>
   </div>
+
+  <div id="tab-account" class="tab-content card">
+    <h3 class="mb-4">Admin Account</h3>
+    <div class="form-group">
+      <label class="form-label">Admin Username</label>
+      <input type="text" class="form-control" id="admin_username" minlength="3" maxlength="50" placeholder="Enter username">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Current Password</label>
+      <input type="password" class="form-control" id="current_password" autocomplete="current-password" placeholder="Required to change password">
+    </div>
+    <div class="form-group">
+      <label class="form-label">New Password</label>
+      <input type="password" class="form-control" id="new_password" autocomplete="new-password" placeholder="Leave empty if not changing">
+      <p class="text-xs text-muted mt-1">Must include uppercase, lowercase, digit, and special character.</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Confirm New Password</label>
+      <input type="password" class="form-control" id="confirm_password" autocomplete="new-password" placeholder="Re-enter new password">
+    </div>
+    <button class="btn btn-primary" onclick="saveAdminProfile()">
+      <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 3h11l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" />
+        <path d="M17 21v-8H7v8" />
+        <path d="M7 3v5h8" />
+      </svg>
+      Update Admin Credentials
+    </button>
+  </div>
 </div>
 {% endblock %}
 
@@ -156,6 +192,11 @@ function switchTab(name, btn) {
 
 async function loadConfig() {
   try {
+    const meRes = await API.get('/api/v1/auth/me');
+    if (meRes.success && meRes.data && meRes.data.username) {
+      document.getElementById('admin_username').value = meRes.data.username;
+    }
+
     const res = await API.get('/api/v1/config/');
     if (res.success) {
       const c = res.data;
@@ -174,6 +215,55 @@ async function loadConfig() {
     }
   } catch(e) {}
   document.getElementById('sys-time').textContent = new Date().toLocaleString('en-IN');
+}
+
+async function saveAdminProfile() {
+  const username = (document.getElementById('admin_username').value || '').trim();
+  const currentPassword = document.getElementById('current_password').value || '';
+  const newPassword = document.getElementById('new_password').value || '';
+  const confirmPassword = document.getElementById('confirm_password').value || '';
+
+  if (!username && !newPassword) {
+    showToast('Provide a username or new password to update.', 'error');
+    return;
+  }
+
+  if (newPassword && !currentPassword) {
+    showToast('Current password is required to change password.', 'error');
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    showToast('New password and confirm password do not match.', 'error');
+    return;
+  }
+
+  try {
+    const payload = {
+      username,
+      current_password: currentPassword,
+      new_password: newPassword,
+      confirm_password: confirmPassword,
+    };
+    const res = await API.put('/api/v1/auth/admin/profile', payload);
+    if (res.success) {
+      showToast('Admin credentials updated successfully.', 'success');
+      document.getElementById('current_password').value = '';
+      document.getElementById('new_password').value = '';
+      document.getElementById('confirm_password').value = '';
+      if (res.data && res.data.username) {
+        document.getElementById('admin_username').value = res.data.username;
+        const nameEl = document.getElementById('sidebar-name');
+        const avatarEl = document.getElementById('sidebar-avatar');
+        if (nameEl) nameEl.textContent = res.data.username;
+        if (avatarEl && res.data.username.length) avatarEl.textContent = res.data.username[0].toUpperCase();
+      }
+    } else {
+      showToast(res.message || 'Update failed.', 'error');
+    }
+  } catch(e) {
+    showToast('Error updating admin credentials.', 'error');
+  }
 }
 
 async function saveSettings(group) {

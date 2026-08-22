@@ -6,6 +6,7 @@ from app import db, bcrypt
 from src.models.user import User
 from src.models.audit_log import AuditLog
 from src.utils.helpers import get_client_ip
+from src.utils.validators import validate_password
 
 
 def register_user(username: str, email: str, password: str, role: str = "student"):
@@ -65,3 +66,53 @@ def login_user(email: str, password: str):
 
 def get_user_by_id(user_id: int):
     return User.query.get(user_id)
+
+
+def update_admin_credentials(
+    user_id: int,
+    username: str = None,
+    current_password: str = None,
+    new_password: str = None,
+):
+    user = User.query.get(user_id)
+    if not user:
+        return None, 404, "User not found."
+
+    username = (username or "").strip()
+    current_password = current_password or ""
+    new_password = new_password or ""
+
+    if not username and not new_password:
+        return None, 400, "Provide at least a new username or new password."
+
+    if username:
+        if len(username) < 3 or len(username) > 50:
+            return None, 400, "Username must be between 3 and 50 characters."
+        existing = User.query.filter(User.username == username, User.id != user.id).first()
+        if existing:
+            return None, 409, "Username already taken."
+
+    if new_password:
+        if not current_password:
+            return None, 400, "Current password is required to set a new password."
+        if not bcrypt.check_password_hash(user.password_hash, current_password):
+            return None, 401, "Current password is incorrect."
+        valid_pw, reason = validate_password(new_password)
+        if not valid_pw:
+            return None, 400, reason
+        user.password_hash = bcrypt.generate_password_hash(new_password).decode("utf-8")
+
+    if username:
+        user.username = username
+
+    db.session.add(user)
+    db.session.add(AuditLog(
+        user_id=user.id,
+        action="ADMIN_PROFILE_UPDATE",
+        entity_type="user",
+        entity_id=user.id,
+        ip_address=get_client_ip(),
+    ))
+    db.session.commit()
+
+    return user, 200, None

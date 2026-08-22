@@ -4,6 +4,7 @@ from flask_jwt_extended import get_jwt_identity, create_access_token, jwt_requir
 from src.services import auth_service
 from src.utils.validators import validate_email, validate_password
 from src.utils.helpers import success_response, error_response
+from src.utils.decorators import admin_required
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -67,3 +68,30 @@ def me():
     if not user:
         return error_response("User not found.", 404)
     return success_response(user.to_dict())
+
+
+@auth_bp.put("/admin/profile")
+@jwt_required()
+@admin_required
+def update_admin_profile():
+    user_id = get_jwt_identity()
+    data = request.get_json(silent=True) or {}
+
+    username = data.get("username")
+    current_password = data.get("current_password")
+    new_password = data.get("new_password")
+    confirm_password = data.get("confirm_password")
+
+    if new_password is not None and new_password != (confirm_password or ""):
+        return error_response("New password and confirm password do not match.")
+
+    user, status_code, err = auth_service.update_admin_credentials(
+        user_id=user_id,
+        username=username,
+        current_password=current_password,
+        new_password=new_password,
+    )
+    if err:
+        return error_response(err, status_code)
+
+    return success_response(user.to_dict(), "Admin profile updated successfully.")
