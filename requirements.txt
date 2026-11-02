@@ -7,9 +7,10 @@ Flask-Bcrypt==1.0.1
 
 # Database
 SQLAlchemy==2.0.30
+psycopg2-binary==2.9.9
 
 # ML & Computer Vision
-opencv-python==4.9.0.80
+opencv-python-headless==4.9.0.80
 numpy==1.26.4
 Pillow==10.3.0
 scikit-learn==1.4.2

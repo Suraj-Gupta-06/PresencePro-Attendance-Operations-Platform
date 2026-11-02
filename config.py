@@ -14,11 +14,14 @@ class Config:
     TESTING = False
 
     # ── Database ───────────────────────────────────────────────────────
+    _raw_db_url = os.getenv("DATABASE_URL")
+    if _raw_db_url and _raw_db_url.startswith("postgres://"):
+        _raw_db_url = _raw_db_url.replace("postgres://", "postgresql://", 1)
+
     _db_path = os.path.join(BASE_DIR, "data", "database", "attendance.db")
     os.makedirs(os.path.dirname(_db_path), exist_ok=True)
-    SQLALCHEMY_DATABASE_URI = os.getenv(
-        "DATABASE_URL",
-        "sqlite:///" + _db_path.replace("\\", "/"),
+    SQLALCHEMY_DATABASE_URI = _raw_db_url or (
+        "sqlite:///" + _db_path.replace("\\", "/")
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}

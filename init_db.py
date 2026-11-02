@@ -18,16 +18,25 @@ from app import create_app, db, bcrypt
 from src.models import User, Class, SystemConfig
 
 def _get_admin_credentials():
-    email = os.getenv("ADMIN_EMAIL") or input("Admin email: ").strip()
-    if not email:
-        raise ValueError("Admin email is required.")
-    password = os.getenv("ADMIN_PASSWORD") or getpass("Admin password: ").strip()
-    if not password:
-        raise ValueError("Admin password is required.")
-    confirm = os.getenv("ADMIN_PASSWORD") or getpass("Confirm password: ").strip()
-    if password != confirm:
-        raise ValueError("Passwords do not match.")
-    return email, password
+    email = os.getenv("ADMIN_EMAIL")
+    password = os.getenv("ADMIN_PASSWORD")
+
+    if email and password:
+        return email.strip(), password.strip()
+
+    # If running in an interactive terminal, prompt the user
+    if sys.stdin and hasattr(sys.stdin, "isatty") and sys.stdin.isatty():
+        try:
+            if not email:
+                email = input("Admin email [default: admin@admin.com]: ").strip() or "admin@admin.com"
+            if not password:
+                password = getpass("Admin password [default: Admin@123]: ").strip() or "Admin@123"
+            return email, password
+        except (EOFError, KeyboardInterrupt):
+            pass
+
+    # Default fallback for automated or headless cloud deployments
+    return (email or "admin@admin.com").strip(), (password or "Admin@123").strip()
 
 
 def init_database():
@@ -37,7 +46,7 @@ def init_database():
     for _d in ["data/database", "data/faces", "data/attendance_captures", "logs"]:
         _os.makedirs(_os.path.join(_base, _d), exist_ok=True)
 
-    app = create_app("development")
+    app = create_app()
     with app.app_context():
         print("Creating all tables …")
         db.create_all()
