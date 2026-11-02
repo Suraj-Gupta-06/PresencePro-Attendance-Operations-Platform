@@ -1,5 +1,6 @@
-"""Face recognition API routes."""
+"""Face recognition API routes with in-memory caching and anti-spoofing liveness checks."""
 import os
+import time
 import uuid
 import cv2
 import numpy as np
@@ -8,6 +9,7 @@ from flask_jwt_extended import jwt_required
 
 from src.ml.face_detection import detect_faces, crop_face
 from src.ml.face_recognition_engine import generate_embedding_from_bgr, recognize_face
+from src.ml.liveness import evaluate_liveness
 from src.models.embedding import FaceEmbedding
 from src.models.student import Student
 from src.models.system_config import SystemConfig
@@ -16,9 +18,26 @@ from src.utils.helpers import success_response, error_response, decode_base64_im
 
 recognition_bp = Blueprint("recognition", __name__)
 
+# ── In-Memory Embedding Cache ────────────────────────────────────────────────
+_CACHED_EMBEDDINGS = None
+_CACHE_TIMESTAMP = 0.0
+_CACHE_TTL = 300.0  # 5 minutes fallback TTL
 
-def _load_all_embeddings():
-    """Load all student embeddings from DB into memory for matching."""
+
+def invalidate_embedding_cache():
+    """Clear memory cache so next request queries the database."""
+    global _CACHED_EMBEDDINGS, _CACHE_TIMESTAMP
+    _CACHED_EMBEDDINGS = None
+    _CACHE_TIMESTAMP = 0.0
+
+
+def _load_all_embeddings(force_reload: bool = False):
+    """Load student embeddings from memory cache or DB if stale."""
+    global _CACHED_EMBEDDINGS, _CACHE_TIMESTAMP
+    now = time.time()
+    if not force_reload and _CACHED_EMBEDDINGS is not None and (now - _CACHE_TIMESTAMP) < _CACHE_TTL:
+        return _CACHED_EMBEDDINGS
+
     records = []
     embeddings_db = FaceEmbedding.query.join(Student).filter(Student.is_active == True).all()
     for emb in embeddings_db:
@@ -29,7 +48,9 @@ def _load_all_embeddings():
             "name": student.name,
             "embedding": emb.embedding,
         })
-    return records
+    _CACHED_EMBEDDINGS = records
+    _CACHE_TIMESTAMP = now
+    return _CACHED_EMBEDDINGS
 
 
 @recognition_bp.post("/image")
@@ -58,6 +79,10 @@ def recognize_from_image():
         crop = crop_face(bgr, face)
         if crop.size == 0:
             continue
+
+        face_location = (face.top, face.right, face.bottom, face.left)
+        liveness = evaluate_liveness(bgr, face_location)
+
         embedding = generate_embedding_from_bgr(crop)
         if embedding is None:
             continue
@@ -70,6 +95,7 @@ def recognize_from_image():
             "name": result.student_name,
             "confidence": round(result.confidence, 3),
             "low_confidence": result.low_confidence,
+            "liveness": liveness.to_dict(),
             "bounding_box": face.to_dict(),
         })
 
@@ -84,7 +110,7 @@ def recognize_from_image():
 def recognize_from_frame():
     """
     Recognize face from a base64-encoded webcam frame.
-    Marks attendance automatically if recognized.
+    Verifies liveness (anti-spoofing) and marks attendance automatically.
     """
     data = request.get_json(silent=True) or {}
     frame_b64 = data.get("frame")
@@ -104,10 +130,14 @@ def recognize_from_frame():
     db_records = _load_all_embeddings()
     results = []
 
-    for face in faces[:10]:
+    for face in faces[:5]:
         crop = crop_face(bgr, face)
         if crop.size == 0:
             continue
+
+        face_location = (face.top, face.right, face.bottom, face.left)
+        liveness = evaluate_liveness(bgr, face_location)
+
         embedding = generate_embedding_from_bgr(crop)
         if embedding is None:
             continue
@@ -116,26 +146,30 @@ def recognize_from_frame():
 
         attendance_marked = False
         already_marked = False
+        spoof_blocked = False
 
         if result.matched and not result.low_confidence:
-            already = check_cooldown(result.student_id, cooldown)
-            if not already:
-                # Save frame crop
-                captures_folder = current_app.config["ATTENDANCE_CAPTURES_FOLDER"]
-                fname = f"{result.student_code}_{uuid.uuid4().hex[:8]}.jpg"
-                img_path = save_cv2_image(crop, captures_folder, fname)
-                relative = f"data/attendance_captures/{fname}"
-
-                att, err = mark_attendance(
-                    student_db_id=result.student_id,
-                    confidence=result.confidence,
-                    image_path=relative,
-                    method="Auto",
-                    cooldown_minutes=cooldown,
-                )
-                attendance_marked = err is None and att is not None
+            if not liveness.is_live:
+                # Anti-spoofing blocked attendance
+                spoof_blocked = True
             else:
-                already_marked = True
+                already = check_cooldown(result.student_id, cooldown)
+                if not already:
+                    captures_folder = current_app.config["ATTENDANCE_CAPTURES_FOLDER"]
+                    fname = f"{result.student_code}_{uuid.uuid4().hex[:8]}.jpg"
+                    save_cv2_image(crop, captures_folder, fname)
+                    relative = f"data/attendance_captures/{fname}"
+
+                    att, err = mark_attendance(
+                        student_db_id=result.student_id,
+                        confidence=result.confidence,
+                        image_path=relative,
+                        method="Auto",
+                        cooldown_minutes=cooldown,
+                    )
+                    attendance_marked = err is None and att is not None
+                else:
+                    already_marked = True
 
         results.append({
             "matched": result.matched,
@@ -144,6 +178,8 @@ def recognize_from_frame():
             "name": result.student_name or "Unknown",
             "confidence": round(result.confidence, 3),
             "low_confidence": result.low_confidence,
+            "liveness": liveness.to_dict(),
+            "spoof_blocked": spoof_blocked,
             "attendance_marked": attendance_marked,
             "already_marked": already_marked,
             "bounding_box": face.to_dict(),

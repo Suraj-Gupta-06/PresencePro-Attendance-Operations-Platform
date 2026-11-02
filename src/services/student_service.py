@@ -13,6 +13,14 @@ from src.ml.face_recognition_engine import generate_embedding_from_bgr
 from src.ml.preprocessor import check_image_quality
 
 
+def _invalidate_cache():
+    try:
+        from src.api.recognition import invalidate_embedding_cache
+        invalidate_embedding_cache()
+    except Exception:
+        pass
+
+
 def create_student(data: dict, image_files: list) -> tuple:
     """
     Register a new student with face images.
@@ -98,6 +106,7 @@ def create_student(data: dict, image_files: list) -> tuple:
         return None, "No valid faces detected in uploaded images. Please provide clear face photos."
 
     db.session.commit()
+    _invalidate_cache()
     return student, None
 
 
@@ -134,6 +143,7 @@ def update_student(student_db_id: int, data: dict):
         if key in data:
             setattr(student, key, data[key])
     db.session.commit()
+    _invalidate_cache()
     return student, None
 
 
@@ -143,6 +153,7 @@ def delete_student(student_db_id: int):
         return False, "Student not found."
     student.is_active = False
     db.session.commit()
+    _invalidate_cache()
     return True, None
 
 
@@ -180,4 +191,5 @@ def add_images_to_student(student_db_id: int, image_files: list):
             added += 1
 
     db.session.commit()
+    _invalidate_cache()
     return added, None
