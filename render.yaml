@@ -3,9 +3,11 @@ services:
     name: presencepro
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
     startCommand: python init_db.py && gunicorn "app:create_app()" --bind 0.0.0.0:$PORT --workers 2 --timeout 120
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
       - key: FLASK_ENV
         value: production
       - key: SECRET_KEY
