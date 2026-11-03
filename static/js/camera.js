@@ -128,13 +128,14 @@ function startRecognitionLoop() {
     }
     try {
       const res = await API.post('/api/v1/recognize/frame', { frame });
-      if (res.success) {
+      if (res && res.success) {
         handleRecognitionResult(res.data);
       } else {
-        handleRecognitionError(res.message || 'Recognition failed.');
+        handleRecognitionError((res && res.message) ? res.message : 'Recognition failed.');
       }
     } catch (e) {
-      // Keep silent on transient glitches
+      console.error("Recognition frame error:", e);
+      handleRecognitionError(e.message || 'Recognition request failed.');
     } finally {
       isRecognising = false;
     }
