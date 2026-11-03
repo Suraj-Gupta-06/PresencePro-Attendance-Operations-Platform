@@ -1,106 +1,167 @@
 # PresencePro — Attendance Operations Platform
 
-PresencePro is a comprehensive, real-time facial recognition attendance system built with Flask, OpenCV, and dlib. It features a modern, responsive, dark-glassmorphism user interface and a robust PostgreSQL database backend.
+PresencePro is an enterprise-grade, real-time facial recognition attendance platform built with Flask, OpenCV, dlib, and PostgreSQL. It features a responsive dark-glassmorphism user interface, in-memory embedding caching, anti-spoofing liveness detection, and automated cloud deployment.
 
-## ✨ Features
+---
 
-- **Real-Time Facial Recognition**: Mark attendance instantly using a webcam or uploaded images.
-- **Student Management**: Register students with multi-image face capture for high accuracy embeddings.
-- **Attendance History**: Browse, filter, and manually adjust attendance records with ease.
-- **Dashboard & Analytics**: View daily summaries, attendance trends, and department breakdowns via dynamic Chart.js graphs.
-- **Advanced Configuration**: Configure recognition thresholds, grace periods, cooldowns, and camera settings directly from the UI.
-- **Access Control**: Secure JWT-based authentication with admin-restricted management and configuration endpoints.
+## ✨ Key Features
+
+- **Real-Time Facial Recognition**: Sub-second face recognition powered by 128-dimensional dlib ResNet face embeddings.
+- **Anti-Spoofing & Liveness Detection**: Multi-layer spoof protection utilizing **Eye Aspect Ratio (EAR)** landmarks and **Laplacian sharpness variance analysis** to block static photos and digital screen replays.
+- **In-Memory Embedding Caching**: $O(1)$ memory lookup cache for vector comparisons, preventing repetitive database queries during high-frequency camera scanning.
+- **Dynamic Bounding Box & Audio Feedback**: Real-time canvas overlay rendering facial bounding boxes, confidence tags, liveness verification badges, and Web Audio melodic confirmation chimes.
+- **Student & Enrolment Management**: Multi-angle image capture and automated embedding generation with quality checks.
+- **Attendance History & Analytics**: Filterable logs, duplicate prevention with cooldown thresholds, and Chart.js analytics for department and session trends.
+- **Security & Access Control**: JWT authentication, Bcrypt salted password hashing, and role-based route guards.
+- **Automated Test Suite**: Unit and integration test suite with `pytest` covering authentication, attendance cooldowns, and anti-spoofing logic.
+
+---
 
 ## 🛠️ Technology Stack
 
-- **Backend**: Python, Flask, Flask-SQLAlchemy, Flask-JWT-Extended
-- **Machine Learning**: OpenCV, dlib, face_recognition
-- **Database**: PostgreSQL
-- **Frontend**: Vanilla HTML/JS, Custom CSS (Glassmorphism design system), Chart.js
+| Layer | Technologies |
+| :--- | :--- |
+| **Backend** | Python 3.11, Flask 3.0, Flask-SQLAlchemy, Flask-JWT-Extended, Flask-Bcrypt, Gunicorn |
+| **Computer Vision** | OpenCV Headless, dlib (pre-compiled binary wheels), face_recognition, NumPy |
+| **Database** | PostgreSQL (Production) / SQLite (Development Fallback) |
+| **Frontend** | Vanilla JavaScript (ES6+), HTML5 Canvas, Glassmorphism CSS, Chart.js, Web Audio API |
+| **Testing & DevOps** | Pytest, Docker, Render Blueprint (`render.yaml`), Git |
 
-## 📋 Prerequisites
+---
 
-Before you begin, ensure you have the following installed:
-- **Python 3.9+**
-- **PostgreSQL 14+**
-- **CMake** (required for compiling dlib)
-- **C++ Build Tools** (e.g., Visual Studio Build Tools on Windows)
+## 🏗️ Architecture & System Design
 
-## 🚀 Setup & Installation
+```mermaid
+flowchart TD
+    subgraph Client["Client Browser / Mobile"]
+        Webcam["HTML5 Webcam Stream"]
+        Canvas["Real-Time Canvas Overlay"]
+        UI["Glassmorphism Dashboard"]
+    end
 
-1. **Clone the repository or navigate to the project folder:**
-   ```bash
-   cd "PresencePro—Attendance-Operations-Platform"
-   ```
+    subgraph Backend["Flask Application Server"]
+        Router["RESTful API Blueprints (/api/v1)"]
+        Cache["In-Memory Embedding Cache (RAM)"]
+        Liveness["Liveness Engine (EAR + Laplacian)"]
+        Engine["Face Recognition Engine (128-D ResNet)"]
+        Service["Attendance Service (Cooldown & Validation)"]
+    end
 
-2. **Create a virtual environment (recommended):**
-   ```bash
-   python -m venv venv
-   # On Windows:
-   venv\Scripts\activate
-   # On Linux/macOS:
-   source venv/bin/activate
-   ```
+    subgraph DataStore["Persistence Layer"]
+        DB[("PostgreSQL / SQLite")]
+        Storage["Face Capture Storage"]
+    end
 
-3. **Install the dependencies:**
-   *Note: Building `dlib` can take several minutes.*
-   ```bash
-   pip install -r requirements.txt
-   ```
-   *(If `dlib` fails to build on Windows, you can try installing a pre-built wheel: `pip install dlib-bin` before installing `face_recognition`)*
-
-4. **Database Configuration:**
-   Ensure your PostgreSQL service is running and create an empty database named `attendance_db`. 
-   
-   Configure your connection string in the `.env` file located in the root directory:
-   ```env
-   DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/attendance_db
-   ```
-
-5. **Initialize the Database:**
-   This will create all required tables, setup default configurations, and create the default admin user.
-   ```bash
-   python init_db.py
-   ```
-
-## 💻 Running the Application
-
-Start the Flask development server:
-```bash
-python run.py
+    Webcam -->|Base64 Video Frame| Router
+    Router --> Liveness
+    Liveness -->|Live Verified| Engine
+    Engine <--> Cache
+    Cache -.->|Stale Invalidation| DB
+    Engine --> Service
+    Service --> DB
+    Service --> Storage
+    Service -->|Status & Bounding Box| Canvas
+    DB --> UI
 ```
 
-The system will be available at: **http://127.0.0.1:5000**
-
-### Default Admin Credentials
-- **Email:** `admin@admin.com`
-- **Password:** `Admin@123`
+---
 
 ## 📁 Directory Structure
 
-- `app.py`: Main application factory
-- `run.py`: Application entry point
-- `init_db.py`: Database initialization script
-- `config.py`: Configuration classes
-- `src/`: 
-  - `api/`: RESTful API blueprints
-  - `ml/`: Face detection and recognition logic
-  - `models/`: SQLAlchemy database models
-  - `services/`: Business logic layer
-  - `utils/`: Helpers and decorators
-  - `views.py`: Frontend HTML template rendering
-- `static/`: CSS styling and frontend JavaScript
-- `templates/`: HTML Jinja2 templates
-- `data/`: Storage for database files and captured face images
+```text
+PresencePro/
+├── .github/                 # Git & repository metadata
+├── src/
+│   ├── api/                 # REST API Blueprints (auth, students, attendance, recognition, config)
+│   ├── ml/                  # Computer vision algorithms (detection, recognition, liveness)
+│   │   ├── face_detection.py
+│   │   ├── face_recognition_engine.py
+│   │   ├── liveness.py      # Eye Aspect Ratio & anti-spoofing engine
+│   │   └── preprocessor.py  # Image quality & normalization
+│   ├── models/              # SQLAlchemy database models
+│   ├── services/            # Core business logic layer
+│   ├── utils/               # Helpers, token decorators, and validators
+│   └── views.py             # Frontend HTML page routing
+├── static/                  # Glassmorphism CSS, vanilla JS modules, branding assets
+├── templates/               # Jinja2 HTML templates
+├── tests/                   # Automated Pytest suite
+│   ├── conftest.py          # Fixtures & in-memory test database
+│   ├── test_auth.py         # Login & JWT authorization tests
+│   ├── test_attendance.py   # Marking & cooldown rule tests
+│   └── test_liveness.py     # Anti-spoofing & EAR algorithm tests
+├── Dockerfile               # Production container definition
+├── render.yaml              # Render Cloud Infrastructure as Code blueprint
+├── requirements.txt         # Production dependencies
+├── config.py                # Environment configurations (Dev / Prod / Test)
+├── init_db.py               # Database initialisation & admin seeding script
+└── run.py                   # Development entry point
+```
+
+---
+
+## 🚀 Getting Started (Local Development)
+
+### 1. Prerequisites
+- **Python 3.11+**
+- Git
+
+### 2. Setup Virtual Environment
+```bash
+# Clone the repository
+git clone https://github.com/Suraj-Gupta-06/PresencePro-Attendance-Operations-Platform.git
+cd PresencePro-Attendance-Operations-Platform
+
+# Create virtual environment
+python -m venv venv
+
+# Activate (Windows)
+venv\Scripts\activate
+# Activate (Linux/macOS)
+source venv/bin/activate
+```
+
+### 3. Install Dependencies
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+pip install --no-deps face-recognition==1.3.0
+```
+
+### 4. Initialize Database
+```bash
+python init_db.py
+```
+*Default Admin Account:*
+- **Email:** `admin@admin.com`
+- **Password:** `Admin@123`
+
+### 5. Run the Server
+```bash
+python run.py
+```
+Open **`http://127.0.0.1:5000`** in your browser.
+
+---
+
+## 🧪 Running Automated Tests
+
+Run the full test suite with `pytest`:
+```bash
+pytest -v
+```
+
+---
+
+## 🌐 Production Cloud Deployment (Render / Docker)
+
+The repository includes a ready-to-use Render Blueprint:
+1. Connect your repository in the [Render Dashboard](https://dashboard.render.com).
+2. Choose **Blueprint** deployment.
+3. Render reads `render.yaml` and provisions:
+   - A managed PostgreSQL instance.
+   - A Web Service with Python 3.11, automatic database seeding, and Gunicorn process management.
+
+---
 
 ## 📄 License
 This project is licensed under the MIT License.
-
-## 🔭 Future Scope
-
-- **Role-Based Access Control**: Admin-only system administration with scoped permissions per role.
-- **Teacher Management**: Admin can create teacher accounts and assign subject/class ownership.
-- **Class/Subject Attendance**: Teachers manage attendance by subject, class, and timetable.
-- **Student Data Ownership**: Teachers can add students directly or request secure transfer from admins/other teachers.
-- **Secure Collaboration**: Fine-grained access logs, approvals, and audit trails for data changes.
-- **Operational Enhancements**: Automated reports, alerts, and scheduling for improved governance.
